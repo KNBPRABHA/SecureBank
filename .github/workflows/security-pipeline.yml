@@ -3,11 +3,11 @@ name: SecureBank Security Pipeline
 on:
     push:
         branches:
-            -main
+            - main
 
     pull_request:
         branches:
-            -main
+            - main
 
 jobs:
     security-checks:
