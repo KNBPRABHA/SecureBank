@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, session,redirect, url_for, make_response #importing the Flask class and request and jsonify modules from the flask package
 import os
 app=Flask(__name__) #creates a flask app instance
-password="admin123"
+#password="admin123"
 #app.secret_key="mysecretkey_for_my_application" #setting a secret key for the application, used for session management and security purposes
 app.secret_key=os.environ.get("SECRET_KEY")
 
