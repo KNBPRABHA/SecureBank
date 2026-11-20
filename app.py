@@ -1,7 +1,8 @@
 from flask import Flask, request, jsonify, session,redirect, url_for, make_response #importing the Flask class and request and jsonify modules from the flask package
-
+import os
 app=Flask(__name__) #creates a flask app instance
-app.secret_key="mysecretkey_for_my_application" #setting a secret key for the application, used for session management and security purposes
+#app.secret_key="mysecretkey_for_my_application" #setting a secret key for the application, used for session management and security purposes
+app.secret_key=os.environ.get("SECRET_KEY")
 
 users={
     "Sam":"Sam123",
@@ -29,7 +30,7 @@ def login():
 
 @app.route("/")  #defining the route called decorator tells flask when someone sends a HTTP request to /, execute the function associated with this route
 def home(): #defining the function that will be executed when the route is accessed
-    return "Welcome to Secure Bank application"
+    return "Welcome to Secure Bank application!"
 
 @app.route('/users',methods=["GET"]) #defining the route for /users endpoint and specifying that it only accepts GET requests
 def get_users():
@@ -104,4 +105,4 @@ def add_security_headers(response):
 print(app.config["SESSION_COOKIE_HTTPONLY"])
 
 if __name__=="__main__": #start the flask application only if this script is run directly ie.when we execute app.py file, not when we import it as a module in another script
-    app.run(debug=True)
+    app.run(debug=False)

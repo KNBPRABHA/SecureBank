@@ -1,0 +1,34 @@
+name: SecureBank Security Pipeline
+
+on:
+    push:
+        branches:
+            -main
+
+    pull_request:
+        branches:
+            -main
+
+jobs:
+    security-checks:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout source code
+              uses: actions/checkout@v4
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                    python-version: 3.13
+
+            - name: Install dependencies
+              run: |
+                    python -m pip install --upgrade pip
+                    pip install -r requirements.txt
+            - name: Run automated tests
+              run: pytest -v
+
+            - name: Run SAST Scan using bandit
+              run: bandit -r app.py
+
+            - name: Run SCA dependency vulnerability scan using pip-audit
+              run: pip-audit -r requirements.txt
