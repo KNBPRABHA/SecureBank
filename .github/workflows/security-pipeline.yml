@@ -12,13 +12,19 @@ on:
 jobs:
     security-checks:
         runs-on: ubuntu-latest
+
+        permissions:
+            contents: read
+            id-token: write
         steps:
             - name: Checkout source code
               uses: actions/checkout@v4
+              with: 
+                    fetch-depth: 0
             - name: Set up Python
               uses: actions/setup-python@v5
               with:
-                    python-version: 3.13
+                    python-version: "3.13"
 
             - name: Install dependencies
               run: |
@@ -32,3 +38,19 @@ jobs:
 
             - name: Run SCA dependency vulnerability scan using pip-audit
               run: pip-audit -r requirements.txt
+            
+            - name: Cache SonarQube packages
+              uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+              with:
+                path: ~/.sonar/cache
+                key: ${{ runner.os }}-sonar
+                restore-keys: ${{ runner.os }}-sonar
+            - name: Authenticate with SonarQube
+              uses: SonarSource/sonarqube-auth-action@v1.2
+            
+            - name: Run SonarQube Scan
+              uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4
+              with:
+                args: >
+                    -Dsonar.organization=knbprabha
+                    -Dsonar.projectKey=KNBPRABHA_SecureBank
