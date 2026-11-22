@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify, session,redirect, url_for, make_response #importing the Flask class and request and jsonify modules from the flask package
+from flask import Flask, request, jsonify, session,redirect, url_for, make_response,render_template_string #importing the Flask class and request and jsonify modules from the flask package
 import os
-app=Flask(__name__) #creates a flask app instance
+from flask_wtf.csrf import CSRFProtect #importing the CSRFProtect class from the flask_wtf.csrf module to enable CSRF protection for the application
 
-#app.secret_key="mysecretkey_for_my_application" #setting a secret key for the application, used for session management and security purposes
+app=Flask(__name__) #creates a flask app instance
+csrf=CSRFProtect(app) #enables CSRF protection for the application
+
 app.secret_key=os.environ.get("SECRET_KEY")
 
 users={
@@ -18,17 +20,34 @@ def login():
         password=request.form.get("password") #getting the password from the form data
         if username in users and users[username]==password: #checking if the username exists in the users dictionary and if the password matches
             session["username"]=username #storing the username in the session to indicate that the user is logged in
-            return f"Welcome, {username}! Login successful." #redirecting to the home page after successful login
+             #redirecting to the home page after successful login
+
+            return redirect(url_for("dashboard"))
         else:
             return "Invalid credentials" #returning an error message for invalid credentials
-    return """
+
+    return render_template_string("""
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         Username: <input type="text" name="username"><br>
         Password: <input type="password" name="password"><br>
         <input type="submit" value="Login">
     </form>
-"""
+  """)
 
+@app.route("/dashboard") #defining the route for /dashboard endpoint
+def dashboard():
+    if "username" not in session: #checking if the user is not logged in
+        return redirect(url_for("login")) #redirecting to the login page if the user is not logged in
+    return render_template_string("""
+        <h2>Welcome to SecureBank, {{ username }}!</h2>
+
+        <form method="POST" action="{{ url_for('logout')}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token()}}">
+
+            <button type="submit">Logout</button>
+            </form>
+            """, username=session["username"])
 @app.route("/")  #defining the route called decorator tells flask when someone sends a HTTP request to /, execute the function associated with this route
 def home(): #defining the function that will be executed when the route is accessed
     return "Welcome to Secure Bank application!"
@@ -54,7 +73,7 @@ accounts={
 def get_account(account_id):
 
     logged_in_user=session.get("username") #getting the logged-in user's name from the session
-    
+
     if not logged_in_user: #checking if the user is not logged in
         return {"error":"Please login first"}, 401 #returning an error message for unauthorized access
     #return accounts.get(account_id)
@@ -65,33 +84,18 @@ def get_account(account_id):
         return {"error": "Access denied"}, 403
     return accounts[account_id]
 
-@app.route("/logout")
+@app.route("/logout",methods=["POST"]) #defining the route for /logout endpoint and specifying that it only accepts POST requests
 def logout():
     session.clear()
-    return "You have been logged out successfully."
 
-@app.route("/cookie-test")
-def cookie_test():
+    return render_template_string("""
+        <h2>You have been logged out successfully.</h2>
+        <form method="GET" action="{{ url_for('login')}}">
+            <button type="submit">Login</button>
+        </form>
+        """)
 
-    response = app.make_response("""
-        <h2>Cookie Visibility Test</h2>
-        <p>Cookies accessible to JavaScript:</p>
-        <pre id="output"></pre>
 
-        <script>
-            document.getElementById("output").textContent =
-                document.cookie;
-        </script>
-    """)
-
-    response.set_cookie(
-        "demo_visible",
-        "hello-from-securebank",
-        httponly=False,
-        samesite="Lax"
-    )
-
-    return response
 
 @app.after_request
 def add_security_headers(response):
@@ -102,6 +106,9 @@ def add_security_headers(response):
         "base-uri 'self'"
     )
     return response
+
+
+
 
 print(app.config["SESSION_COOKIE_HTTPONLY"])
 

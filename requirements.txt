@@ -2,3 +2,4 @@ Flask
 pytest
 bandit
 pip-audit
+Flask-WTF
